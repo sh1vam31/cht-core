@@ -56,11 +56,11 @@ get_compose_download_url() {
 }
 
 get_all_known_versions() {
-  curl -s "${stagingUrl}"/_design/builds/_view/releases\?descending=true |  tr -d \\n | grep -o "medic:medic:[A-Za-z0-9\.\_\/\-]*" | cut -f3 -d: | sort
+  curl -s "${stagingUrl}"/_design/builds/_view/releases\?descending=true |  tr -d \\n | grep -o "medic:medic:[A-Za-z0-9._/-]*" | cut -f3 -d: | sort
 }
 
 get_latest_version_string() {
-  curl -s "${stagingUrl}"/_design/builds/_view/releases\?limit=1\&descending=true |  tr -d \\n | grep -o 'medic:medic:[0-9\.]*' | cut -f3 -d:
+  curl -s "${stagingUrl}"/_design/builds/_view/releases\?limit=1\&descending=true |  tr -d \\n | grep -o 'medic:medic:[0-9.]*' | cut -f3 -d:
 }
 
 create_compose_files() {
@@ -197,7 +197,7 @@ service_has_image_downloaded(){
   else
     compose_path="${homeDir}/compose/cht-core.yml"
   fi
-  image=$(grep "${service}:" "${compose_path}" | grep image | cut -f2,3 -d":" | xargs)
+  image=$(grep -F "${service}:" "${compose_path}" | grep image | cut -f2,3 -d":" | xargs)
 
   imageDownloadName=$(docker image ls  --format '{{.Repository}}:{{.Tag}}' -f "reference=${image}" 2>/dev/null)
   if [ "$imageDownloadName" ];then
