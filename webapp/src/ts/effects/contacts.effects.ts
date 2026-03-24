@@ -183,7 +183,7 @@ export class ContactsEffects {
     const trackPerformance = this.performanceService.track();
     const selected = this.selectedContact;
 
-    if (!selected || !selected.doc) {
+    if (!selected?.doc) {
       this.contactsActions.receiveSelectedContactTargetDoc([]);
       trackPerformance?.stop({ name: [ ...trackName, 'load_targets_aborted' ].join(':') });
       return;
