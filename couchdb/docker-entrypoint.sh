@@ -80,7 +80,11 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 
 	if [ "$COUCHDB_USER" ] && [ "$COUCHDB_PASSWORD" ] && [ -z "$COUCHDB_SYNC_ADMINS_NODE" ]; then
 		# Create admin only if not already present
-		if ! grep -Pzq "\[admins\]\n$COUCHDB_USER =" $CLUSTER_CREDENTIALS; then
+		if ! awk -v user="$COUCHDB_USER" '
+			/^\[.*\]$/ { in_admins = ($0 == "[admins]") }
+			in_admins && $1 == user && $2 == "=" { found = 1; exit }
+			END { exit !found }
+		' "$CLUSTER_CREDENTIALS"; then
 			printf "\n[admins]\n%s = %s\n" "$COUCHDB_USER" "$COUCHDB_PASSWORD" >>$CLUSTER_CREDENTIALS
 		fi
 	fi
