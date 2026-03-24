@@ -211,9 +211,9 @@ export class ContactsEffects {
     const trackPerformance = this.performanceService.track();
     const selected = this.selectedContact;
     
-    const summaryPromise = (!selected?.doc)
-      ? Promise.resolve(undefined)
-      : this.contactSummaryService.get(selected.doc, selected.reports, selected.lineage, selected.targetDoc);
+    const summaryPromise = selected?.doc
+      ? this.contactSummaryService.get(selected.doc, selected.reports, selected.lineage, selected.targetDoc)
+      : Promise.resolve(undefined);
 
     return summaryPromise
       .catch(error => {
