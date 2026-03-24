@@ -11,6 +11,7 @@ set +e
 FAILED_LIBS=""
 FAIL_COUNT=0
 LIBS_DIR="shared-libs"
+SEPARATOR="========================================================"
 
 echo "--------------------------------------------------------"
 echo "Starting Shared Libs Unit Tests..."
@@ -38,18 +39,18 @@ for lib in "$LIBS_DIR"/*/; do
 done
 
 echo ""
-echo "========================================================"
+echo "$SEPARATOR"
 echo "Shared Libs Test Suite Complete"
-echo "========================================================"
+echo "$SEPARATOR"
 
-if [ $FAIL_COUNT -gt 0 ]; then
-  echo -e "ERROR: The following $FAIL_COUNT shared lib(s) failed their tests:\n"
+if [[ $FAIL_COUNT -gt 0 ]]; then
+  echo -e "ERROR: The following $FAIL_COUNT shared lib(s) failed their tests:\n" >&2
   echo -e "$FAILED_LIBS"
   echo "Please check the logs above for the specific workspace errors."
-  echo "========================================================"
+  echo "$SEPARATOR"
   exit 1
 else
   echo -e "SUCCESS: All shared libs passed successfully!"
-  echo "========================================================"
+  echo "$SEPARATOR"
   exit 0
 fi
