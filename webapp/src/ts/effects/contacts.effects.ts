@@ -211,7 +211,7 @@ export class ContactsEffects {
     const trackPerformance = this.performanceService.track();
     const selected = this.selectedContact;
     
-    const summaryPromise = (!selected || !selected.doc)
+    const summaryPromise = (!selected?.doc)
       ? Promise.resolve(undefined)
       : this.contactSummaryService.get(selected.doc, selected.reports, selected.lineage, selected.targetDoc);
 
