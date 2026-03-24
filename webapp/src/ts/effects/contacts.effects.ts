@@ -181,9 +181,16 @@ export class ContactsEffects {
 
   private async loadTargetDoc(contactId, trackName) {
     const trackPerformance = this.performanceService.track();
+    const selected = this.selectedContact;
+
+    if (!selected || !selected.doc) {
+      this.contactsActions.receiveSelectedContactTargetDoc([]);
+      trackPerformance?.stop({ name: [ ...trackName, 'load_targets_aborted' ].join(':') });
+      return;
+    }
 
     const targetDocs = await this.targetAggregateService.getTargetDocs(
-      this.selectedContact,
+      selected,
       this.userFacilityIds,
       this.userContactId
     );
