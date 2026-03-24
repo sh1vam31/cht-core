@@ -29,7 +29,7 @@ for lib in "$LIBS_DIR"/*/; do
   npm test --prefix "$lib" --if-present
   
   exit_status=$?
-  if [ $exit_status -ne 0 ]; then
+  if [[ $exit_status -ne 0 ]]; then
     echo "Workspace '$lib_name' FAILED."
     FAILED_LIBS="$FAILED_LIBS  - $LIBS_DIR/$lib_name\n"
     FAIL_COUNT=$((FAIL_COUNT + 1))
