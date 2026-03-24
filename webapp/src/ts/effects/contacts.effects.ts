@@ -210,8 +210,12 @@ export class ContactsEffects {
   private loadContactSummary(contactId, trackName) {
     const trackPerformance = this.performanceService.track();
     const selected = this.selectedContact;
-    return this.contactSummaryService
-      .get(selected.doc, selected.reports, selected.lineage, selected.targetDoc)
+    
+    const summaryPromise = (!selected || !selected.doc)
+      ? Promise.resolve(undefined)
+      : this.contactSummaryService.get(selected.doc, selected.reports, selected.lineage, selected.targetDoc);
+
+    return summaryPromise
       .catch(error => {
         this.contactsActions.updateSelectedContactSummary({ errorStack: error.stack });
         throw error;
