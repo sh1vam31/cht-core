@@ -15,7 +15,7 @@ const getExtensionDoc = (name) => {
 module.exports = {
   getScript: async (name) => {
     const doc = await getExtensionDoc(name);
-    const attachment = doc && doc._attachments && doc._attachments['extension.js'];
+    const attachment = doc?._attachments?.['extension.js'];
     if (attachment) {
       return {
         data: attachment.data,
