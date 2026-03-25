@@ -19,7 +19,7 @@ module.exports = {
     
     try {
       const script = await uiExtensionService.getScript(name);
-      if (script && script.data) {
+      if (script?.data) {
         res.set('Content-Type', 'text/javascript');
         res.send(Buffer.from(script.data, 'base64'));
       } else {
