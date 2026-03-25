@@ -80,5 +80,5 @@ if [[ $FAIL_COUNT -gt 0 ]]; then
   echo -e "$FAILED_LIBS\n"
   echo "Please check the logs above for the specific workspace errors."
   echo "$SEPARATOR"
-  exit $FINAL_EXIT_CODE
+  exit "$FINAL_EXIT_CODE"
 fi
