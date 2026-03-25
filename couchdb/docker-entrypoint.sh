@@ -90,12 +90,12 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 			}
 		' "$CLUSTER_CREDENTIALS")
 
-		if [ "$admin_status" = "has_admins" ]; then
+		if [[ "$admin_status" == "has_admins" ]]; then
 			awk -v user="$COUCHDB_USER" -v pass="$COUCHDB_PASSWORD" '
 				{ print $0 }
 				/^\[admins\]$/ { print user " = " pass }
 			' "$CLUSTER_CREDENTIALS" > "$CLUSTER_CREDENTIALS.tmp" && cat "$CLUSTER_CREDENTIALS.tmp" > "$CLUSTER_CREDENTIALS" && rm "$CLUSTER_CREDENTIALS.tmp"
-		elif [ "$admin_status" = "missing" ]; then
+		elif [[ "$admin_status" == "missing" ]]; then
 			printf "\n[admins]\n%s = %s\n" "$COUCHDB_USER" "$COUCHDB_PASSWORD" >>"$CLUSTER_CREDENTIALS"
 		fi
 	fi
