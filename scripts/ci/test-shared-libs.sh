@@ -10,6 +10,7 @@ set +e
 
 FAILED_LIBS=""
 FAIL_COUNT=0
+FINAL_EXIT_CODE=0
 LIBS_DIR="shared-libs"
 SEPARATOR="========================================================"
 
@@ -18,6 +19,14 @@ echo "Starting Shared Libs Unit Tests..."
 echo "--------------------------------------------------------"
 
 for lib in "$LIBS_DIR"/*/; do
+  # Skip if it's not a real directory
+  [ -d "$lib" ] || continue
+
+  # Ensure there is a package.json with a test script instead of relying on --if-present
+  if [ ! -f "$lib/package.json" ] || ! grep -q '"test":' "$lib/package.json" 2>/dev/null; then
+    continue
+  fi
+
   # Remove trailing slash and extract the pure folder name
   lib_name=$(basename "$lib")
   
@@ -26,16 +35,39 @@ for lib in "$LIBS_DIR"/*/; do
   echo "--------------------------------------------------------"
   
   # Run the unit test for this isolated workspace
-  npm test --prefix "$lib" --if-present
+  # Pipe through tee to capture output for identifying failing test names
+  TEST_OUTPUT_FILE="/tmp/cht_test_output_${lib_name}.log"
+  npm test --prefix "$lib" 2>&1 | tee "$TEST_OUTPUT_FILE"
   
-  exit_status=$?
+  # Capture the exit status of the npm command (not tee)
+  exit_status=${PIPESTATUS[0]}
+  
   if [[ $exit_status -ne 0 ]]; then
     echo "Workspace '$lib_name' FAILED."
-    FAILED_LIBS="$FAILED_LIBS  - $LIBS_DIR/$lib_name\n"
+    
+    # Store the first failing exit code we encounter to use at the end
+    if [ "$FINAL_EXIT_CODE" -eq 0 ]; then
+      FINAL_EXIT_CODE=$exit_status
+    fi
+
+    FAILED_LIBS="$FAILED_LIBS\n  - $LIBS_DIR/$lib_name"
+    
+    # Extract failing test names from mocha output (patterns like "  1) suite name test name:")
+    FAILING_TESTS=$(grep -E "^ {2}[0-9]+\) " "$TEST_OUTPUT_FILE" | sed -E 's/^ *[0-9]+\) (.*)/\1/' || true)
+    
+    if [ -n "$FAILING_TESTS" ]; then
+      while IFS= read -r test_name; do
+        # Ignore empty lines
+        if [ -n "$test_name" ]; then
+          FAILED_LIBS="$FAILED_LIBS\n      ✖ $test_name"
+        fi
+      done <<< "$FAILING_TESTS"
+    fi
+    
     FAIL_COUNT=$((FAIL_COUNT + 1))
-  else
-    echo "[PASS] Workspace '$lib_name' PASSED (or no tests found)."
   fi
+  
+  rm -f "$TEST_OUTPUT_FILE"
 done
 
 echo ""
@@ -45,12 +77,8 @@ echo "$SEPARATOR"
 
 if [[ $FAIL_COUNT -gt 0 ]]; then
   echo -e "ERROR: The following $FAIL_COUNT shared lib(s) failed their tests:\n" >&2
-  echo -e "$FAILED_LIBS"
+  echo -e "$FAILED_LIBS\n"
   echo "Please check the logs above for the specific workspace errors."
   echo "$SEPARATOR"
-  exit 1
-else
-  echo -e "SUCCESS: All shared libs passed successfully!"
-  echo "$SEPARATOR"
-  exit 0
+  exit $FINAL_EXIT_CODE
 fi
