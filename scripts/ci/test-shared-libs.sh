@@ -20,10 +20,10 @@ echo "--------------------------------------------------------"
 
 for lib in "$LIBS_DIR"/*/; do
   # Skip if it's not a real directory
-  [ -d "$lib" ] || continue
+  [[ -d "$lib" ]] || continue
 
   # Ensure there is a package.json with a test script instead of relying on --if-present
-  if [ ! -f "$lib/package.json" ] || ! grep -q '"test":' "$lib/package.json" 2>/dev/null; then
+  if [[ ! -f "$lib/package.json" ]] || ! grep -q '"test":' "$lib/package.json" 2>/dev/null; then
     continue
   fi
 
@@ -46,7 +46,7 @@ for lib in "$LIBS_DIR"/*/; do
     echo "Workspace '$lib_name' FAILED."
     
     # Store the first failing exit code we encounter to use at the end
-    if [ "$FINAL_EXIT_CODE" -eq 0 ]; then
+    if [[ "$FINAL_EXIT_CODE" -eq 0 ]]; then
       FINAL_EXIT_CODE=$exit_status
     fi
 
@@ -55,10 +55,10 @@ for lib in "$LIBS_DIR"/*/; do
     # Extract failing test names from mocha output (patterns like "  1) suite name test name:")
     FAILING_TESTS=$(grep -E "^ {2}[0-9]+\) " "$TEST_OUTPUT_FILE" | sed -E 's/^ *[0-9]+\) (.*)/\1/' || true)
     
-    if [ -n "$FAILING_TESTS" ]; then
+    if [[ -n "$FAILING_TESTS" ]]; then
       while IFS= read -r test_name; do
         # Ignore empty lines
-        if [ -n "$test_name" ]; then
+        if [[ -n "$test_name" ]]; then
           FAILED_LIBS="$FAILED_LIBS\n      ✖ $test_name"
         fi
       done <<< "$FAILING_TESTS"
