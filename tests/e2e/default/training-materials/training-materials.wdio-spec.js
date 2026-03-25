@@ -54,7 +54,7 @@ describe('Training Materials Page', () => {
         internalId: FIRST_TRAINING_ID,
         title: FIRST_TRAINING_NAME,
         type: 'form',
-        context: { start_date: new Date().getTime(), user_roles: [ 'pharmacist' ], duration: 5 },
+        context: { start_date: new Date().getTime() - 60000, user_roles: [ 'pharmacist' ], duration: 5 },
         _attachments: {
           xml: { content_type: 'application/octet-stream', data: Buffer.from(firstXML).toString('base64') },
         },
@@ -66,7 +66,7 @@ describe('Training Materials Page', () => {
         internalId: SECOND_TRAINING_ID,
         title: SECOND_TRAINING_NAME,
         type: 'form',
-        context: { start_date: new Date().getTime(), user_roles: [ 'pharmacist' ], duration: 5 },
+        context: { start_date: new Date().getTime() - 60000, user_roles: [ 'pharmacist' ], duration: 5 },
         _attachments: {
           xml: { content_type: 'application/octet-stream', data: Buffer.from(secondXML).toString('base64') },
         },

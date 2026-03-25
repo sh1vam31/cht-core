@@ -79,6 +79,7 @@ const openHamburgerMenu = async () => {
     await hamburgerMenuSelectors.hamburgerMenu().click();
   }
   await hamburgerMenuSelectors.closeSideBarMenu().waitForDisplayed();
+  await browser.pause(ELEMENT_DISPLAY_PAUSE);
 };
 
 const closeHamburgerMenu = async () => {
