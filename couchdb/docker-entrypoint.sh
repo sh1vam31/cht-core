@@ -80,12 +80,23 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 
 	if [ "$COUCHDB_USER" ] && [ "$COUCHDB_PASSWORD" ] && [ -z "$COUCHDB_SYNC_ADMINS_NODE" ]; then
 		# Create admin only if not already present
-		if ! awk -v user="$COUCHDB_USER" '
-			/^\[.*\]$/ { in_admins = ($0 == "[admins]") }
+		admin_status=$(awk -v user="$COUCHDB_USER" '
+			/^\[.*\]$/ { in_admins = ($0 == "[admins]"); if (in_admins) has_admins = 1 }
 			in_admins && $1 == user && $2 == "=" { found = 1; exit }
-			END { exit !found }
-		' "$CLUSTER_CREDENTIALS"; then
-			printf "\n[admins]\n%s = %s\n" "$COUCHDB_USER" "$COUCHDB_PASSWORD" >>$CLUSTER_CREDENTIALS
+			END {
+				if (found) print "found"
+				else if (has_admins) print "has_admins"
+				else print "missing"
+			}
+		' "$CLUSTER_CREDENTIALS")
+
+		if [ "$admin_status" = "has_admins" ]; then
+			awk -v user="$COUCHDB_USER" -v pass="$COUCHDB_PASSWORD" '
+				{ print $0 }
+				/^\[admins\]$/ { print user " = " pass }
+			' "$CLUSTER_CREDENTIALS" > "$CLUSTER_CREDENTIALS.tmp" && cat "$CLUSTER_CREDENTIALS.tmp" > "$CLUSTER_CREDENTIALS" && rm "$CLUSTER_CREDENTIALS.tmp"
+		elif [ "$admin_status" = "missing" ]; then
+			printf "\n[admins]\n%s = %s\n" "$COUCHDB_USER" "$COUCHDB_PASSWORD" >>"$CLUSTER_CREDENTIALS"
 		fi
 	fi
 
