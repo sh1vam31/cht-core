@@ -77,9 +77,9 @@ const openHamburgerMenu = async () => {
     await closeFastActionList();
     await closeReloadModal(false);
     await hamburgerMenuSelectors.hamburgerMenu().click();
+    await browser.pause(ELEMENT_DISPLAY_PAUSE);
   }
   await hamburgerMenuSelectors.closeSideBarMenu().waitForDisplayed();
-  await browser.pause(ELEMENT_DISPLAY_PAUSE);
 };
 
 const closeHamburgerMenu = async () => {
