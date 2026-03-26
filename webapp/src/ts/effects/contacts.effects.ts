@@ -180,15 +180,13 @@ export class ContactsEffects {
   }
 
   private async loadTargetDoc(contactId, trackName) {
-    const trackPerformance = this.performanceService.track();
     const selected = this.selectedContact;
 
     if (!selected?.doc) {
-      this.contactsActions.receiveSelectedContactTargetDoc([]);
-      trackPerformance?.stop({ name: [ ...trackName, 'load_targets_aborted' ].join(':') });
       return;
     }
 
+    const trackPerformance = this.performanceService.track();
     const targetDocs = await this.targetAggregateService.getTargetDocs(
       selected,
       this.userFacilityIds,
@@ -214,25 +212,33 @@ export class ContactsEffects {
       });
   }
 
-  private loadContactSummary(contactId, trackName) {
-    const trackPerformance = this.performanceService.track();
+  private async loadContactSummary(contactId, trackName) {
     const selected = this.selectedContact;
-    return this.contactSummaryService
-      .get(selected.doc, selected.reports, selected.lineage, selected.targetDoc)
-      .catch(error => {
-        this.contactsActions.updateSelectedContactSummary({ errorStack: error.stack });
-        throw error;
-      })
-      .then(summary => {
-        return this
-          .verifySelectedContactNotChanged(contactId)
-          .then(() => {
-            this.contactsActions.setContactsLoadingSummary(false);
-            return this.contactsActions.updateSelectedContactSummary(summary);
-          });
-      })
-      .finally(() => {
-        trackPerformance?.stop({ name: [ ...trackName, 'load_contact_summary' ].join(':') });
-      });
+    if (!selected?.doc) {
+      this.contactsActions.setContactsLoadingSummary(false);
+      return;
+    }
+
+    const trackPerformance = this.performanceService.track();
+    let summary;
+
+    try {
+      summary = await this.contactSummaryService.get(
+        selected.doc,
+        selected.reports,
+        selected.lineage,
+        selected.targetDoc
+      );
+    } catch (error) {
+      this.contactsActions.updateSelectedContactSummary({ errorStack: error.stack });
+      trackPerformance?.stop({ name: [ ...trackName, 'load_contact_summary' ].join(':') });
+      throw error;
+    }
+
+    await this.verifySelectedContactNotChanged(contactId);
+
+    trackPerformance?.stop({ name: [ ...trackName, 'load_contact_summary' ].join(':') });
+    this.contactsActions.setContactsLoadingSummary(false);
+    return this.contactsActions.updateSelectedContactSummary(summary);
   }
 }
