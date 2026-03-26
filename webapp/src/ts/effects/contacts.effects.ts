@@ -208,19 +208,22 @@ export class ContactsEffects {
   }
 
   private async loadContactSummary(contactId, trackName) {
-    const trackPerformance = this.performanceService.track();
     const selected = this.selectedContact;
+    if (!selected?.doc) {
+      this.contactsActions.setContactsLoadingSummary(false);
+      return;
+    }
+
+    const trackPerformance = this.performanceService.track();
     let summary;
 
     try {
-      if (selected?.doc) {
-        summary = await this.contactSummaryService.get(
-          selected.doc,
-          selected.reports,
-          selected.lineage,
-          selected.targetDoc
-        );
-      }
+      summary = await this.contactSummaryService.get(
+        selected.doc,
+        selected.reports,
+        selected.lineage,
+        selected.targetDoc
+      );
     } catch (error) {
       this.contactsActions.updateSelectedContactSummary({ errorStack: error.stack });
       trackPerformance?.stop({ name: [ ...trackName, 'load_contact_summary' ].join(':') });
