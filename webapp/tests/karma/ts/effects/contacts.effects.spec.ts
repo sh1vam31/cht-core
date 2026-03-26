@@ -161,7 +161,7 @@ describe('Contacts effects', () => {
       const setLoadingShowContent = sinon.stub(GlobalActions.prototype, 'setLoadingShowContent');
       const settingSelected = sinon.stub(GlobalActions.prototype, 'settingSelected');
 
-      contactViewModelGeneratorService.getContact.resolves({ _id: 'contactid', model: 'contact model' });
+      contactViewModelGeneratorService.getContact.resolves({ _id: 'contactid', doc: {}, model: 'contact model' });
 
       await effects.selectContact.toPromise();
 
