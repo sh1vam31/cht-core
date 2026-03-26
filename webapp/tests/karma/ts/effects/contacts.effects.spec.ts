@@ -161,14 +161,22 @@ describe('Contacts effects', () => {
       const setLoadingShowContent = sinon.stub(GlobalActions.prototype, 'setLoadingShowContent');
       const settingSelected = sinon.stub(GlobalActions.prototype, 'settingSelected');
 
-      contactViewModelGeneratorService.getContact.resolves({ _id: 'contactid', model: 'contact model', doc: { _id: 'contactid' } });
+      contactViewModelGeneratorService.getContact.resolves({
+        _id: 'contactid',
+        model: 'contact model',
+        doc: { _id: 'contactid' }
+      });
 
       await effects.selectContact.toPromise();
 
       expect(contactViewModelGeneratorService.getContact.callCount).to.equal(1);
       expect(contactViewModelGeneratorService.getContact.args[0]).to.deep.equal(['contactid', { merge: false }]);
       expect(setSelected.callCount).to.equal(1);
-      expect(setSelected.args[0]).to.deep.equal([{ _id: 'contactid', model: 'contact model', doc: { _id: 'contactid' } }]);
+      expect(setSelected.args[0]).to.deep.equal([{
+        _id: 'contactid',
+        model: 'contact model',
+        doc: { _id: 'contactid' }
+      }]);
       expect(setLoadingShowContent.callCount).to.equal(1);
       expect(setLoadingSelectedContact.callCount).to.equal(1);
       expect(setContactsLoadingSummary.callCount).to.equal(2);
