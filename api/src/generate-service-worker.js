@@ -74,7 +74,7 @@ const appendExtensionLibs = async (config) => {
 const appendUiExtensions = async (config) => {
   const extensions = await uiExtensionService.getAllProperties();
   const offlineExtensions = extensions.filter(ext => {
-    if (!ext.roles || !ext.roles.length) {
+    if (!ext.roles?.length) {
       return true;
     }
     return ext.roles.some(role => role.offline === true);
@@ -89,7 +89,7 @@ const appendUiExtensions = async (config) => {
     config.globPatterns.push(extPath);
     
     const script = await uiExtensionService.getScript(ext.id);
-    if (script && script.data) {
+    if (script?.data) {
       config.templatedURLs[extPath] = script.data;
     }
   }
