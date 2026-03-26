@@ -183,6 +183,7 @@ export class ContactsEffects {
     const selected = this.selectedContact;
 
     if (!selected?.doc) {
+      this.contactsActions.receiveSelectedContactTargetDoc([]);
       return;
     }
 
@@ -215,6 +216,7 @@ export class ContactsEffects {
   private async loadContactSummary(contactId, trackName) {
     const selected = this.selectedContact;
     if (!selected?.doc) {
+      this.contactsActions.updateSelectedContactSummary(undefined);
       this.contactsActions.setContactsLoadingSummary(false);
       return;
     }
