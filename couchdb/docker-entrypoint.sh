@@ -79,24 +79,14 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 	touch $CLUSTER_CREDENTIALS
 
 	if [ "$COUCHDB_USER" ] && [ "$COUCHDB_PASSWORD" ] && [ -z "$COUCHDB_SYNC_ADMINS_NODE" ]; then
-		# Create admin only if not already present
-		admin_status=$(awk -v user="$COUCHDB_USER" '
-			/^\[.*\]$/ { in_admins = ($0 == "[admins]"); if (in_admins) has_admins = 1 }
-			in_admins && $1 == user && $2 == "=" { found = 1; exit }
-			END {
-				if (found) print "found"
-				else if (has_admins) print "has_admins"
-				else print "missing"
-			}
-		' "$CLUSTER_CREDENTIALS")
+		# Ensure [admins] section exists
+		if ! grep -q '^\s*\[\s*admins\s*\]\s*$' "$CLUSTER_CREDENTIALS"; then
+			printf "\n[admins]\n" >> "$CLUSTER_CREDENTIALS"
+		fi
 
-		if [[ "$admin_status" == "has_admins" ]]; then
-			awk -v user="$COUCHDB_USER" -v pass="$COUCHDB_PASSWORD" '
-				{ print $0 }
-				/^\[admins\]$/ { print user " = " pass }
-			' "$CLUSTER_CREDENTIALS" > "$CLUSTER_CREDENTIALS.tmp" && cat "$CLUSTER_CREDENTIALS.tmp" > "$CLUSTER_CREDENTIALS" && rm "$CLUSTER_CREDENTIALS.tmp"
-		elif [[ "$admin_status" == "missing" ]]; then
-			printf "\n[admins]\n%s = %s\n" "$COUCHDB_USER" "$COUCHDB_PASSWORD" >>"$CLUSTER_CREDENTIALS"
+		# Ensure user exists within [admins] section
+		if ! sed -n '/^\s*\[\s*admins\s*\]\s*$/,/^\s*\[/p' "$CLUSTER_CREDENTIALS" | grep -q "^\s*${COUCHDB_USER}\s*="; then
+			sed -i "/^\s*\[\s*admins\s*\]\s*$/a ${COUCHDB_USER} = ${COUCHDB_PASSWORD}" "$CLUSTER_CREDENTIALS"
 		fi
 	fi
 
