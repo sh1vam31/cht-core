@@ -86,7 +86,10 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 
 		# Ensure user exists within [admins] section
 		if ! sed -n '/^\s*\[\s*admins\s*\]\s*$/,/^\s*\[/p' "$CLUSTER_CREDENTIALS" | grep -q "^\s*${COUCHDB_USER}\s*="; then
-			sed -i "/^\s*\[\s*admins\s*\]\s*$/a ${COUCHDB_USER} = ${COUCHDB_PASSWORD}" "$CLUSTER_CREDENTIALS"
+			export ADMIN_CREDS_LINE="$(printf '%s = %s' "$COUCHDB_USER" "$COUCHDB_PASSWORD")"
+			awk '/^\s*\[\s*admins\s*\]\s*$/{print; print ENVIRON["ADMIN_CREDS_LINE"]; next}1' \
+				"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
+				&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
 		fi
 	fi
 
