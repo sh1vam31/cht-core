@@ -35,8 +35,15 @@ setSecret() {
 		COUCHDB_SECRET=$(cat /proc/sys/kernel/random/uuid)
 	fi
 	# Set secret only if not already present
-	if ! grep -Pzq "\[couch_httpd_auth\]\nsecret =" $CLUSTER_CREDENTIALS; then
-		printf "\n[couch_httpd_auth]\nsecret = %s\n" "$COUCHDB_SECRET" >>$CLUSTER_CREDENTIALS
+	if ! grep -q '^\s*\[\s*couch_httpd_auth\s*\]\s*$' "$CLUSTER_CREDENTIALS"; then
+		printf "\n[couch_httpd_auth]\n" >> "$CLUSTER_CREDENTIALS"
+	fi
+	if ! sed -n '/^\s*\[\s*couch_httpd_auth\s*\]\s*$/,/^\s*\[/p' "$CLUSTER_CREDENTIALS" | grep -q '^\s*secret\s*='; then
+		AUTH_SECRET_LINE="secret = $COUCHDB_SECRET"
+		export AUTH_SECRET_LINE
+		awk '/^\s*\[\s*couch_httpd_auth\s*\]\s*$/{print; print ENVIRON["AUTH_SECRET_LINE"]; next}1' \
+			"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
+			&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
 	fi
 }
 
@@ -45,8 +52,15 @@ setUuid() {
 		COUCHDB_UUID=$(cat /proc/sys/kernel/random/uuid)
 	fi
 	# Set uuid only if not already present
-	if ! grep -Pzq "\[couchdb\]\nuuid =" $CLUSTER_CREDENTIALS; then
-		printf "\n[couchdb]\nuuid = %s\n" "$COUCHDB_UUID" >>$CLUSTER_CREDENTIALS
+	if ! grep -q '^\s*\[\s*couchdb\s*\]\s*$' "$CLUSTER_CREDENTIALS"; then
+		printf "\n[couchdb]\n" >> "$CLUSTER_CREDENTIALS"
+	fi
+	if ! sed -n '/^\s*\[\s*couchdb\s*\]\s*$/,/^\s*\[/p' "$CLUSTER_CREDENTIALS" | grep -q '^\s*uuid\s*='; then
+		AUTH_UUID_LINE="uuid = $COUCHDB_UUID"
+		export AUTH_UUID_LINE
+		awk '/^\s*\[\s*couchdb\s*\]\s*$/{print; print ENVIRON["AUTH_UUID_LINE"]; next}1' \
+			"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
+			&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
 	fi
 }
 
@@ -103,10 +117,25 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 	fi
 
 	if [ "$COUCHDB_LOG_LEVEL" ]; then
-		if ! grep -Pzq "\[log\]\nlevel =" $CLUSTER_CREDENTIALS; then
-			printf "\n[log]\nlevel = %s\n" "$COUCHDB_LOG_LEVEL" >>$CLUSTER_CREDENTIALS
+		# Ensure [log] section exists
+		if ! grep -q '^\s*\[\s*log\s*\]\s*$' "$CLUSTER_CREDENTIALS"; then
+			printf "\n[log]\n" >> "$CLUSTER_CREDENTIALS"
+		fi
+
+		if ! sed -n '/^\s*\[\s*log\s*\]\s*$/,/^\s*\[/p' "$CLUSTER_CREDENTIALS" | grep -q '^\s*level\s*='; then
+			# Insert if key is missing
+			LOG_LEVEL_LINE="level = $COUCHDB_LOG_LEVEL"
+			export LOG_LEVEL_LINE
+			awk '/^\s*\[\s*log\s*\]\s*$/{print; print ENVIRON["LOG_LEVEL_LINE"]; next}1' \
+				"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
+				&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
 		else
-			sed -i "s/level = .*/level = $COUCHDB_LOG_LEVEL/g" $CLUSTER_CREDENTIALS
+			# Update if key already exists
+			LOG_LEVEL_PART="$COUCHDB_LOG_LEVEL"
+			export LOG_LEVEL_PART
+			awk '/^\s*\[\s*log\s*\]\s*$/{in_log=1} /^\[/{if ($0 !~ /\[log\]/) in_log=0} {if (in_log && /^\s*level\s*=/) {print "level = " ENVIRON["LOG_LEVEL_PART"]; next} print}' \
+				"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
+				&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
 		fi
 	fi
 
