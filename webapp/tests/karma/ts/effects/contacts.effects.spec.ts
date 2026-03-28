@@ -712,6 +712,21 @@ describe('Contacts effects', () => {
         expect(setSnackbarContent.callCount).to.equal(0);
         expect(unsetSelected.callCount).to.equal(1);
       });
+
+      it('should handle missing contact doc', async () => {
+        const updateSelectedContactSummary: any = ContactsActions.prototype.updateSelectedContactSummary;
+        const setContactsLoadingSummary: any = ContactsActions.prototype.setContactsLoadingSummary;
+
+        contactViewModelGeneratorService.getContact.resolves({ _id: 'person', doc: undefined });
+
+        actions$ = of(ContactActionList.selectContact({ id: 'person' }));
+        await effects.selectContact.toPromise();
+
+        expect(contactSummaryService.get.callCount).to.equal(0);
+        expect(updateSelectedContactSummary.callCount).to.equal(1);
+        expect(updateSelectedContactSummary.args[0][0]).to.be.undefined;
+        expect(setContactsLoadingSummary.calledWith(false)).to.be.true;
+      });
     });
 
     describe('loading tasks', () => {

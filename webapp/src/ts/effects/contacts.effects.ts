@@ -225,16 +225,18 @@ export class ContactsEffects {
         selected.lineage,
         selected.targetDoc
       );
+
+      await this.verifySelectedContactNotChanged(contactId);
+
+      this.contactsActions.setContactsLoadingSummary(false);
+      return this.contactsActions.updateSelectedContactSummary(summary);
     } catch (error) {
-      this.contactsActions.updateSelectedContactSummary({ errorStack: error.stack });
-      trackPerformance?.stop({ name: [ ...trackName, 'load_contact_summary' ].join(':') });
+      if (error.code !== 'SELECTED_CONTACT_CHANGED') {
+        this.contactsActions.updateSelectedContactSummary({ errorStack: error.stack });
+      }
       throw error;
+    } finally {
+      trackPerformance?.stop({ name: [ ...trackName, 'load_contact_summary' ].join(':') });
     }
-
-    await this.verifySelectedContactNotChanged(contactId);
-
-    trackPerformance?.stop({ name: [ ...trackName, 'load_contact_summary' ].join(':') });
-    this.contactsActions.setContactsLoadingSummary(false);
-    return this.contactsActions.updateSelectedContactSummary(summary);
   }
 }
