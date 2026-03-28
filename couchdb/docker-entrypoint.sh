@@ -121,8 +121,18 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 		/bin/bash /opt/couchdb/etc/set-up-cluster.sh check_if_couchdb_is_ready "http://$COUCHDB_SYNC_ADMINS_NODE:5984"
 		COUCHDB_HASHED_PASSWORD=$(curl -u "$COUCHDB_USER:$COUCHDB_PASSWORD" "http://$COUCHDB_SYNC_ADMINS_NODE:5984/_node/couchdb@$COUCHDB_SYNC_ADMINS_NODE/_config/admins/$COUCHDB_USER" | sed "s/^\([\"]\)\(.*\)\1\$/\2/g")
 
-		if ! grep -Pzq "$COUCHDB_USER = $COUCHDB_HASHED_PASSWORD" $CLUSTER_CREDENTIALS; then
-			printf "[admins]\n%s = %s\n" "$COUCHDB_USER" "$COUCHDB_HASHED_PASSWORD" >>$CLUSTER_CREDENTIALS
+		# Ensure [admins] section exists
+		if ! grep -q '^\s*\[\s*admins\s*\]\s*$' "$CLUSTER_CREDENTIALS"; then
+			printf "\n[admins]\n" >> "$CLUSTER_CREDENTIALS"
+		fi
+
+		# Ensure user exists within [admins] section
+		if ! sed -n '/^\s*\[\s*admins\s*\]\s*$/,/^\s*\[/p' "$CLUSTER_CREDENTIALS" | grep -q "^\s*${COUCHDB_USER}\s*="; then
+			ADMIN_CREDS_LINE="$(printf '%s = %s' "$COUCHDB_USER" "$COUCHDB_HASHED_PASSWORD")"
+			export ADMIN_CREDS_LINE
+			awk '/^\s*\[\s*admins\s*\]\s*$/{print; print ENVIRON["ADMIN_CREDS_LINE"]; next}1' \
+				"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
+				&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
 		fi
 
 		COUCHDB_SECRET=$(curl -u "$COUCHDB_USER:$COUCHDB_PASSWORD" "http://$COUCHDB_SYNC_ADMINS_NODE:5984/_node/couchdb@$COUCHDB_SYNC_ADMINS_NODE/_config/couch_httpd_auth/secret" | sed "s/^\([\"]\)\(.*\)\1\$/\2/g")
