@@ -11,6 +11,7 @@ const { DOC_IDS } = require('@medic/constants');
 
 const ALL_KEY = '_all'; // key in the docs_by_replication_key view for records everyone can access
 const UNASSIGNED_KEY = '_unassigned'; // key in the docs_by_replication_key view for unassigned records
+const MEDIC_CLIENT_DDOC = '_design/medic-client';
 const MEDIC_OFFLINE_TASKS_DDOC = '_design/medic-offline-tasks';
 const DEFAULT_DDOCS = [
   MEDIC_CLIENT_DDOC,
@@ -189,9 +190,12 @@ const updateContext = (allowed, authorizationContext, { contactsByDepth }) => {
  * @param   {DocByReplicationKey} docsByReplicationKey - result of `medic/_nouveau/docs_by_replication_key` index
  * @param   {Array}    contactsByDepth - results of `medic/contacts_by_depth` view against doc
  * @returns {Boolean}
- */
 const allowedDoc = (docId, authorizationContext, { docsByReplicationKey, contactsByDepth }) => {
-  if ([MEDIC_CLIENT_DDOC, MEDIC_OFFLINE_TASKS_DDOC, getUserSettingsId(authorizationContext.userCtx.name)].includes(docId)) {
+  if ([
+    MEDIC_CLIENT_DDOC,
+    MEDIC_OFFLINE_TASKS_DDOC,
+    getUserSettingsId(authorizationContext.userCtx.name),
+  ].includes(docId)) {
     return true;
   }
 
@@ -690,7 +694,11 @@ const getDocsByReplicationKey = async (authorizationContext) => {
  * @returns {string[]}
  */
 const filterAllowedDocIds = (authCtx, docsByReplicationKey, { includeTasks = true } = {}) => {
-  const validatedIds = [MEDIC_CLIENT_DDOC, MEDIC_OFFLINE_TASKS_DDOC, getUserSettingsId(authCtx.userCtx.name)];
+  const validatedIds = [
+    MEDIC_CLIENT_DDOC,
+    MEDIC_OFFLINE_TASKS_DDOC,
+    getUserSettingsId(authCtx.userCtx.name),
+  ];
 
   if (!docsByReplicationKey || !docsByReplicationKey.length) {
     return validatedIds;
