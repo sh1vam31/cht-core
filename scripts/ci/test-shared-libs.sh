@@ -26,7 +26,6 @@ for lib in "$LIBS_DIR"/*/; do
   # Skip if it's not a real directory
   [[ -d "$lib" ]] || continue
 
-  # Ensure there is a package.json with a test script instead of relying on --if-present
   if [[ ! -f "$lib/package.json" ]] || ! grep -q '"test":' "$lib/package.json" 2>/dev/null; then
     continue
   fi
@@ -35,22 +34,20 @@ for lib in "$LIBS_DIR"/*/; do
   lib_name=$(basename "$lib")
   
   echo ""
-  echo ">>> Testing Workspace: $lib_name"
+  echo ">>> Testing shared-lib: $lib_name"
   echo "--------------------------------------------------------"
   
   # Run the unit test for this isolated workspace
   # Pipe through tee to capture output for identifying failing test names
   TEST_OUTPUT_FILE="/tmp/cht_test_output_${lib_name}.log"
   
-  # Using 'script' or 'unbuffer' would be ideal for interactivity, but FORCE_COLOR=1 
-  # is usually enough for mocha to keep colors when piped.
   npm test --prefix "$lib" 2>&1 | tee "$TEST_OUTPUT_FILE"
   
   # Capture the exit status of the npm command (not tee)
   exit_status=${PIPESTATUS[0]}
   
   if [[ $exit_status -ne 0 ]]; then
-    echo "Workspace '$lib_name' FAILED."
+    echo "shared-lib '$lib_name' FAILED."
     
     # Store the first failing exit code we encounter to use at the end
     if [[ "$FINAL_EXIT_CODE" -eq 0 ]]; then
@@ -59,8 +56,26 @@ for lib in "$LIBS_DIR"/*/; do
 
     FAILED_LIBS_SUMMARY="$FAILED_LIBS_SUMMARY\n  - $LIBS_DIR/$lib_name"
     
-    # Extract failing test names for the short summary (stripping ANSI color codes natively)
-    FAILING_TEST_NAMES=$(grep -E "[0-9]+\) " "$TEST_OUTPUT_FILE" | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" | sed -E 's/^ *[0-9]+\) (.*)/\1/' || true)
+    # Extract failing test names for the short summary (stripping ANSI color codes)
+    # We look for the Mocha summary section which starts with the number (e.g. "  1) ")
+    # and join it with the next indented line if it contains the test description.
+    FAILING_TEST_NAMES=$(sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" "$TEST_OUTPUT_FILE" | \
+      awk '/[0-9]+ (failing|passing)/ { start=1; next } start && /^[[:space:]]*[0-9]+\)/ { 
+        sub(/^[[:space:]]*[0-9]+\) /, "");
+        sub(/[[:space:]]*$/, "");
+        line=$0; 
+        if (getline > 0) {
+          sub(/^[[:space:]]+/, "");
+          sub(/[[:space:]]*$/, "");
+          if ($0 != "" && $0 !~ /Error/ && $0 !~ /^[0-9]+\)/) {
+            print line " " $0 
+          } else {
+            print line
+          }
+        } else {
+          print line
+        }
+      }' || true)
     
     if [[ -n "$FAILING_TEST_NAMES" ]]; then
       while IFS= read -r test_name; do
@@ -99,7 +114,6 @@ if [[ $FAIL_COUNT -gt 0 ]]; then
   echo -e "ERROR: The following $FAIL_COUNT shared lib(s) failed their tests:" >&2
   echo -e "$FAILED_LIBS_SUMMARY"
   echo -e "$FAILED_LIBS_DETAILS\n"
-  echo "Please check the logs above if more context is needed."
   echo "$SEPARATOR"
   exit "$FINAL_EXIT_CODE"
 fi
