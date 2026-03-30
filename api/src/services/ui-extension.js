@@ -16,11 +16,13 @@ module.exports = {
   getScript: async (name) => {
     const doc = await getExtensionDoc(name);
     const attachment = doc?._attachments?.['extension.js'];
-    if (attachment) {
-      return {
-        data: attachment.data,
-      };
+    if (!attachment) {
+      return null;
     }
+
+    return {
+      data: attachment.data,
+    };
   },
   
   getAllProperties: async () => {
@@ -33,19 +35,13 @@ module.exports = {
     return result.rows.map(row => {
       const doc = row.doc;
       const id = doc._id.replace(PREFIX, '');
-      
-      // Remove CouchDB specific fields (starting with '_')
-      const cleanProperties = Object.keys(doc)
-        .filter(key => !key.startsWith('_'))
-        .reduce((obj, key) => {
-          obj[key] = doc[key];
-          return obj;
-        }, {});
 
-      return {
-        id,
-        ...cleanProperties
-      };
+      const properties = { id };
+      // Do not include CouchDB specific fields (starting with '_')
+      Object.keys(doc)
+        .filter(key => !key.startsWith('_'))
+        .forEach((key) => properties[key] = doc[key]);
+      return properties;
     });
   }
 };

@@ -12,13 +12,13 @@ module.exports = {
   },
   
   get: async (req, res) => {
-    const name = req.params.name;
-    if (!name) {
-      return serverUtils.error({ status: 400, message: 'Extension name parameter required' }, req, res);
+    const id = req.params.id;
+    if (!id) {
+      return serverUtils.error({ status: 400, message: 'Extension id parameter required' }, req, res);
     }
     
     try {
-      const script = await uiExtensionService.getScript(name);
+      const script = await uiExtensionService.getScript(id);
       if (script?.data) {
         res.set('Content-Type', 'text/javascript');
         res.send(Buffer.from(script.data, 'base64'));

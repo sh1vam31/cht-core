@@ -1,5 +1,5 @@
 const sinon = require('sinon');
-const chai = require('chai');
+const { expect } = require('chai');
 const service = require('../../../src/services/ui-extension');
 const db = require('../../../src/db');
 
@@ -18,22 +18,25 @@ describe('UI Extension service', () => {
     it('handles undefined doc', async () => {
       dbGet.resolves(undefined);
       const actual = await service.getScript('test');
-      chai.expect(actual).to.be.undefined;
+      expect(actual).to.be.null;
+      expect(dbGet).to.have.been.calledOnceWithExactly('ui-extension:test', { attachments: true });
     });
 
     it('handles 404', async () => {
       dbGet.rejects({ status: 404 });
       const actual = await service.getScript('test');
-      chai.expect(actual).to.be.undefined;
+      expect(actual).to.be.null;
+      expect(dbGet).to.have.been.calledOnceWithExactly('ui-extension:test', { attachments: true });
     });
 
     it('throws anything else', async () => {
       dbGet.rejects({ status: 500 });
       try {
         await service.getScript('test');
-        chai.expect.fail('should have thrown');
+        expect.fail('should have thrown');
       } catch (e) {
-        chai.expect(e.status).to.equal(500);
+        expect(e.status).to.equal(500);
+        expect(dbGet).to.have.been.calledOnceWithExactly('ui-extension:test', { attachments: true });
       }
     });
 
@@ -44,7 +47,8 @@ describe('UI Extension service', () => {
         }
       });
       const actual = await service.getScript('test');
-      chai.expect(actual.data).to.equal('my-script');
+      expect(actual.data).to.equal('my-script');
+      expect(dbGet).to.have.been.calledOnceWithExactly('ui-extension:test', { attachments: true });
     });
   });
 
@@ -60,16 +64,40 @@ describe('UI Extension service', () => {
               name: 'My Extension',
               version: '1.0'
             }
+          },
+          {
+            doc: {
+              _id: 'ui-extension:another-ext',
+            }
           }
         ]
       });
 
       const actual = await service.getAllProperties();
-      chai.expect(actual.length).to.equal(1);
-      chai.expect(actual[0]).to.deep.equal({
-        id: 'my-ext',
-        name: 'My Extension',
-        version: '1.0'
+      expect(actual).to.deep.equal([
+        {
+          id: 'my-ext',
+          name: 'My Extension',
+          version: '1.0'
+        },
+        { id: 'another-ext' }
+      ]);
+      expect(allDocs).to.have.been.calledOnceWithExactly({
+        startkey: 'ui-extension:',
+        endkey: `ui-extension:\ufff0`,
+        include_docs: true,
+      });
+    });
+
+    it('returns an empty array when no ui-extension docs exist', async () => {
+      allDocs.resolves({ rows: [] });
+
+      const actual = await service.getAllProperties();
+      expect(actual).to.be.empty;
+      expect(allDocs).to.have.been.calledOnceWithExactly({
+        startkey: 'ui-extension:',
+        endkey: `ui-extension:\ufff0`,
+        include_docs: true,
       });
     });
   });
