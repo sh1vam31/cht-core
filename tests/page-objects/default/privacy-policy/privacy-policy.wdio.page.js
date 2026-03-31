@@ -24,6 +24,7 @@ const waitForPolicy = async (elm, { header, paragraph, language }) => {
     timeout: 10 * 1000,
     timeoutMsg: `Timed out waiting for ${language} Privacy Policy to Display`
   };
+  await elm.waitForDisplayed(timeoutOpts);
   await browser.waitUntil(async () => {
     const wrapperText = await elm.getText();
     return wrapperText.includes(header) && wrapperText.includes(paragraph);
