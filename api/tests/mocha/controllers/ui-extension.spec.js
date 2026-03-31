@@ -1,60 +1,93 @@
 const sinon = require('sinon');
-const chai = require('chai');
+const { expect } = require('chai');
 const controller = require('../../../src/controllers/ui-extension');
 const service = require('../../../src/services/ui-extension');
 const serverUtils = require('../../../src/server-utils');
 
-let res;
-
 describe('UI Extension controller', () => {
+  let res;
+  let getAllProperties;
+  let getScript;
+  let serverError;
+  let errorStub;
+
   beforeEach(() => {
     res = {
       json: sinon.stub(),
       set: sinon.stub(),
       send: sinon.stub(),
     };
+    getAllProperties = sinon.stub(service, 'getAllProperties');
+    getScript = sinon.stub(service, 'getScript');
+    serverError = sinon.stub(serverUtils, 'serverError');
+    errorStub = sinon.stub(serverUtils, 'error');
   });
 
   afterEach(() => sinon.restore());
 
   describe('list', () => {
     it('returns JSON from service', async () => {
-      sinon.stub(service, 'getAllProperties').resolves([{ id: 'test' }]);
+      const properties = [{ id: 'test' }];
+      getAllProperties.resolves(properties);
       await controller.list({}, res);
-      chai.expect(res.json.callCount).to.equal(1);
-      chai.expect(res.json.args[0][0]).to.deep.equal([{ id: 'test' }]);
+      expect(res.json).to.have.been.calledOnceWithExactly(properties);
+      expect(getAllProperties).to.have.been.calledOnceWithExactly();
+      expect(serverError).to.not.have.been.called;
     });
 
     it('handles errors', async () => {
-      sinon.stub(service, 'getAllProperties').rejects(new Error('boom'));
-      const errorStub = sinon.stub(serverUtils, 'serverError');
+      const error = new Error('boom');
+      getAllProperties.rejects(error);
       await controller.list({}, res);
-      chai.expect(errorStub.callCount).to.equal(1);
+      expect(res.json).to.not.have.been.called;
+      expect(serverError).to.have.been.calledOnceWithExactly(error, {}, res);
     });
   });
 
   describe('get', () => {
-    it('requires name param', async () => {
+    it('requires id param', async () => {
       const req = { params: {} };
-      const errorStub = sinon.stub(serverUtils, 'error');
       await controller.get(req, res);
-      chai.expect(errorStub.args[0][0].status).to.equal(400);
+      expect(errorStub).to.have.been.calledOnceWithExactly(
+        { status: 400, message: 'Extension id parameter required' }, req, res
+      );
+      expect(getScript).to.not.have.been.called;
+      expect(res.send).to.not.have.been.called;
+      expect(res.set).to.not.have.been.called;
     });
 
     it('returns 404 when script not found', async () => {
-      const req = { params: { name: 'test' } };
-      sinon.stub(service, 'getScript').resolves(undefined);
-      const errorStub = sinon.stub(serverUtils, 'error');
+      const req = { params: { id: 'test' } };
+      getScript.resolves(undefined);
       await controller.get(req, res);
-      chai.expect(errorStub.args[0][0].status).to.equal(404);
+      expect(errorStub).to.have.been.calledOnceWithExactly(
+        { message: 'Not found', status: 404 }, req, res
+      );
+      expect(getScript).to.have.been.calledOnceWithExactly('test');
+      expect(res.send).to.not.have.been.called;
+      expect(res.set).to.not.have.been.called;
     });
 
     it('sends buffered script', async () => {
-      const req = { params: { name: 'test' } };
-      sinon.stub(service, 'getScript').resolves({ data: 'QUJD' }); // 'ABC' base64
+      const req = { params: { id: 'test' } };
+      getScript.resolves({ data: 'QUJD' }); // 'ABC' base64
       await controller.get(req, res);
-      chai.expect(res.set.args[0]).to.deep.equal(['Content-Type', 'text/javascript']);
-      chai.expect(res.send.args[0][0].toString()).to.equal('ABC');
+      expect(res.set).to.have.been.calledOnceWithExactly('Content-Type', 'text/javascript');
+      expect(res.send.args[0][0].toString()).to.equal('ABC');
+      expect(errorStub).to.not.have.been.called;
+    });
+
+    it('handles unexpected error', async () => {
+      const error = new Error('boom');
+      const req = { params: { id: 'test' } };
+      getScript.rejects(error);
+      await controller.get(req, res);
+      expect(serverError).to.have.been.calledOnceWithExactly(
+        error, req, res
+      );
+      expect(getScript).to.have.been.calledOnceWithExactly('test');
+      expect(res.send).to.not.have.been.called;
+      expect(res.set).to.not.have.been.called;
     });
   });
 });

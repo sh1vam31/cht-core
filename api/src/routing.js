@@ -304,7 +304,7 @@ app.use(express.static(resources.webappPath));
 app.get('/extension-libs', extensionLibs.list);
 app.get('/extension-libs/:name', extensionLibs.get);
 app.get('/ui-extension', uiExtension.list);
-app.get('/ui-extension/:name', uiExtension.get);
+app.get('/ui-extension/:id', uiExtension.get);
 app.get(`${routePrefix}login`, login.get);
 app.get(`${routePrefix}login/identity`, login.getIdentity);
 app.postJson(`${routePrefix}login`, login.post);
