@@ -136,14 +136,16 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 			printf "\n[admins]\n" >> "$CLUSTER_CREDENTIALS"
 		fi
 
-		# Ensure user exists within [admins] section
-		if ! sed -n '/^\s*\[\s*admins\s*\]\s*$/,/^\s*\[/p' "$CLUSTER_CREDENTIALS" | grep -q "^\s*${COUCHDB_USER}\s*="; then
-			ADMIN_CREDS_LINE="$(printf '%s = %s' "$COUCHDB_USER" "$COUCHDB_HASHED_PASSWORD")"
-			export ADMIN_CREDS_LINE
-			awk '/^\s*\[\s*admins\s*\]\s*$/{print; print ENVIRON["ADMIN_CREDS_LINE"]; next}1' \
-				"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
-				&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
-		fi
+		# Always set the admin credentials (remove old entry from [admins] first, then insert)
+		ADMIN_CREDS_LINE="$(printf '%s = %s' "$COUCHDB_USER" "$COUCHDB_HASHED_PASSWORD")"
+		export ADMIN_CREDS_LINE
+		awk -v user="$COUCHDB_USER" '
+			/^\s*\[\s*admins\s*\]\s*$/ { in_admins=1; print; print ENVIRON["ADMIN_CREDS_LINE"]; next }
+			/^\s*\[/ { in_admins=0 }
+			in_admins && $0 ~ "^\\s*" user "\\s*=" { next }
+			1
+		' "$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
+			&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
 
 		COUCHDB_SECRET=$(curl -u "$COUCHDB_USER:$COUCHDB_PASSWORD" "http://$COUCHDB_SYNC_ADMINS_NODE:5984/_node/couchdb@$COUCHDB_SYNC_ADMINS_NODE/_config/couch_httpd_auth/secret" | sed "s/^\([\"]\)\(.*\)\1\$/\2/g")
 		setSecret
