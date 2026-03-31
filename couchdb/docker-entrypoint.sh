@@ -46,13 +46,6 @@ setSecret() {
 		awk '/^\s*\[\s*couch_httpd_auth\s*\]\s*$/{print; print ENVIRON["AUTH_SECRET_LINE"]; next}1' \
 			"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
 			&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
-	else
-		# Update if exists
-		AUTH_SECRET_PART="$COUCHDB_SECRET"
-		export AUTH_SECRET_PART
-		awk '/^\s*\[\s*couch_httpd_auth\s*\]\s*$/{in_auth=1} /^\[/{if ($0 !~ /\[couch_httpd_auth\]/) in_auth=0} {if (in_auth && /^\s*secret\s*=/) {print "secret = " ENVIRON["AUTH_SECRET_PART"]; next} print}' \
-			"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
-			&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
 	fi
 }
 
@@ -70,13 +63,6 @@ setUuid() {
 		AUTH_UUID_LINE="uuid = $COUCHDB_UUID"
 		export AUTH_UUID_LINE
 		awk '/^\s*\[\s*couchdb\s*\]\s*$/{print; print ENVIRON["AUTH_UUID_LINE"]; next}1' \
-			"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
-			&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
-	else
-		# Update if exists
-		AUTH_UUID_PART="$COUCHDB_UUID"
-		export AUTH_UUID_PART
-		awk '/^\s*\[\s*couchdb\s*\]\s*$/{in_couchdb=1} /^\[/{if ($0 !~ /\[couchdb\]/) in_couchdb=0} {if (in_couchdb && /^\s*uuid\s*=/) {print "uuid = " ENVIRON["AUTH_UUID_PART"]; next} print}' \
 			"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
 			&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
 	fi
@@ -145,13 +131,6 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 			LOG_LEVEL_LINE="level = $COUCHDB_LOG_LEVEL"
 			export LOG_LEVEL_LINE
 			awk '/^\s*\[\s*log\s*\]\s*$/{print; print ENVIRON["LOG_LEVEL_LINE"]; next}1' \
-				"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
-				&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
-		else
-			# Update if key already exists
-			LOG_LEVEL_PART="$COUCHDB_LOG_LEVEL"
-			export LOG_LEVEL_PART
-			awk '/^\s*\[\s*log\s*\]\s*$/{in_log=1} /^\[/{if ($0 !~ /\[log\]/) in_log=0} {if (in_log && /^\s*level\s*=/) {print "level = " ENVIRON["LOG_LEVEL_PART"]; next} print}' \
 				"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
 				&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
 		fi
