@@ -55,9 +55,13 @@ describe('generate service worker', () => {
     extensionLibsService.getAll.resolves([{ name: 'bar.js', data: 'barcode' }]);
     uiExtensionService.getAllProperties.resolves([
       { id: 'offline-ext', roles: [{ offline: true }] },
-      { id: 'online-ext', roles: [{ offline: false }] }
+      { id: 'online-ext', roles: [{ offline: false }] },
+      { id: 'no-roles-ext' },
+      { id: 'no-script-ext' },
     ]);
-    uiExtensionService.getScript.resolves({ data: 'my-script' });
+    uiExtensionService.getScript.withArgs('offline-ext').resolves({ data: 'my-script' });
+    uiExtensionService.getScript.withArgs('no-roles-ext').resolves({ data: 'other extension script' });
+    uiExtensionService.getScript.withArgs('no-script-ext').resolves();
     sinon.stub(workbox, 'generateSW').returns();
     db.medic.get.resolves({ _id: DOC_IDS.SERVICE_WORKER_META });
     db.medic.put.resolves();
@@ -92,7 +96,9 @@ describe('generate service worker', () => {
         '/extension-libs',
         '/extension-libs/bar.js',
         '/ui-extension',
-        '/ui-extension/offline-ext'
+        '/ui-extension/offline-ext',
+        '/ui-extension/no-roles-ext',
+        '/ui-extension/no-script-ext'
       ],
       templatedURLs: {
         '/': [ 'webapp/index.html' ],
@@ -103,8 +109,10 @@ describe('generate service worker', () => {
         ],
         '/extension-libs': '["bar.js"]',
         '/extension-libs/bar.js': 'barcode',
-        '/ui-extension': '[{"id":"offline-ext","roles":[{"offline":true}]}]',
-        '/ui-extension/offline-ext': 'my-script'
+        '/ui-extension': '[{"id":"offline-ext","roles":' +
+          '[{"offline":true}]},{"id":"no-roles-ext"},{"id":"no-script-ext"}]',
+        '/ui-extension/offline-ext': 'my-script',
+        '/ui-extension/no-roles-ext': 'other extension script'
       },
       ignoreURLParametersMatching: [/redirect/, /username/],
       modifyURLPrefix: {
