@@ -40,12 +40,7 @@ setSecret() {
 	fi
 
 	if ! sed -n '/^\s*\[\s*couch_httpd_auth\s*\]\s*$/,/^\s*\[/p' "$CLUSTER_CREDENTIALS" | grep -q '^\s*secret\s*='; then
-		# Insert if missing
-		AUTH_SECRET_LINE="secret = $COUCHDB_SECRET"
-		export AUTH_SECRET_LINE
-		awk '/^\s*\[\s*couch_httpd_auth\s*\]\s*$/{print; print ENVIRON["AUTH_SECRET_LINE"]; next}1' \
-			"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
-			&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
+		sed -i "/^\s*\[\s*couch_httpd_auth\s*\]\s*$/a secret = $COUCHDB_SECRET" "$CLUSTER_CREDENTIALS"
 	fi
 }
 
@@ -59,12 +54,7 @@ setUuid() {
 	fi
 
 	if ! sed -n '/^\s*\[\s*couchdb\s*\]\s*$/,/^\s*\[/p' "$CLUSTER_CREDENTIALS" | grep -q '^\s*uuid\s*='; then
-		# Insert if missing
-		AUTH_UUID_LINE="uuid = $COUCHDB_UUID"
-		export AUTH_UUID_LINE
-		awk '/^\s*\[\s*couchdb\s*\]\s*$/{print; print ENVIRON["AUTH_UUID_LINE"]; next}1' \
-			"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
-			&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
+		sed -i "/^\s*\[\s*couchdb\s*\]\s*$/a uuid = $COUCHDB_UUID" "$CLUSTER_CREDENTIALS"
 	fi
 }
 
@@ -126,14 +116,8 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 			printf "\n[log]\n" >> "$CLUSTER_CREDENTIALS"
 		fi
 
-		if ! sed -n '/^\s*\[\s*log\s*\]\s*$/,/^\s*\[/p' "$CLUSTER_CREDENTIALS" | grep -q '^\s*level\s*='; then
-			# Insert if key is missing
-			LOG_LEVEL_LINE="level = $COUCHDB_LOG_LEVEL"
-			export LOG_LEVEL_LINE
-			awk '/^\s*\[\s*log\s*\]\s*$/{print; print ENVIRON["LOG_LEVEL_LINE"]; next}1' \
-				"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
-				&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
-		fi
+		# Always set the log level (remove old value first, then insert)
+		sed -i -e '/^\s*level\s*=.*/d' -e "/^\s*\[\s*log\s*\]\s*$/a level = $COUCHDB_LOG_LEVEL" "$CLUSTER_CREDENTIALS"
 	fi
 
 	if [ "$CLUSTER_PEER_IPS" ] || [ "$IS_CLUSTER" = false ]; then
