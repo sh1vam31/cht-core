@@ -31,8 +31,9 @@ const getCouchDBVersion = async () => {
 const getInfo = (db) => utils.request({ path: `/${db}` });
 const getUpdateSeq = (info) => parseInt(info.update_seq.split('-')[0]);
 const getNouveauIndexInfo = (db, name) => {
+  const dbName = db.replace('-test', '');
   const [ddocName, indexName] = name.split('/');
-  return utils.request({ path: `/${db}/_design/${ddocName}/_nouveau_info/${indexName}` });
+  return utils.request({ path: `/${dbName}/_design/${ddocName}/_nouveau_info/${indexName}` });
 };
 
 const getExpectedViewIndexes = (db) => {
