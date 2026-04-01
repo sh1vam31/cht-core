@@ -39,7 +39,7 @@ for lib in "$LIBS_DIR"/*/; do
   
   # Run the unit test for this isolated workspace
   # Pipe through tee to capture output for identifying failing test names
-  TEST_OUTPUT_FILE="/tmp/cht_test_output_${lib_name}.log"
+  TEST_OUTPUT_FILE=$(mktemp "/tmp/cht_test_output_${lib_name}.XXXXXXXX.log")
   
   npm test --prefix "$lib" 2>&1 | tee "$TEST_OUTPUT_FILE"
   
@@ -57,41 +57,42 @@ for lib in "$LIBS_DIR"/*/; do
     FAILED_LIBS_SUMMARY="$FAILED_LIBS_SUMMARY\n  - $LIBS_DIR/$lib_name"
     
     # Extract failing test names for the short summary (stripping ANSI color codes)
-    # We look for the Mocha summary section which starts with the number (e.g. "  1) ")
-    # and join it with the next indented line if it contains the test description.
-    FAILING_TEST_NAMES=$(sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" "$TEST_OUTPUT_FILE" | \
-      awk '/[0-9]+ (failing|passing)/ { start=1; next } start && /^[[:space:]]*[0-9]+\)/ { 
-        sub(/^[[:space:]]*[0-9]+\) /, "");
-        sub(/[[:space:]]*$/, "");
-        line=$0; 
-        if (getline > 0) {
-          sub(/^[[:space:]]+/, "");
-          sub(/[[:space:]]*$/, "");
-          if ($0 != "" && $0 !~ /Error/ && $0 !~ /^[0-9]+\)/) {
-            print line " " $0 
-          } else {
-            print line
-          }
-        } else {
-          print line
-        }
-      }' || true)
+    # We look for the Mocha failure summary section at the end of the log
+    # We skip to the part after "[0-9]+ failing" to avoid catching progress logs
+    FAIL_LINES=$(sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" "$TEST_OUTPUT_FILE" | \
+      awk '/[0-9]+ failing/ { start=1; next } 
+           start && /^[[:space:]]*[0-9]+\)/ { 
+             sub(/^[[:space:]]*[0-9]+\) /, "");
+             sub(/[[:space:]]*$/, "");
+             line=$0; 
+             if (getline > 0) {
+               sub(/^[[:space:]]+/, "");
+               sub(/[[:space:]]*$/, "");
+               if ($0 != "" && $0 !~ /Error/ && $0 !~ /^[0-9]+\)/) {
+                 print line " " $0 
+               } else {
+                 print line
+               }
+             } else {
+               print line
+             }
+           }' | sort -u || true)
     
-    if [[ -n "$FAILING_TEST_NAMES" ]]; then
+    if [[ -n "$FAIL_LINES" ]]; then
       while IFS= read -r test_name; do
         if [[ -n "$test_name" && "$test_name" != "null" ]]; then
           FAILED_LIBS_SUMMARY="$FAILED_LIBS_SUMMARY\n      ✖ $test_name"
         fi
-      done <<< "$FAILING_TEST_NAMES"
+      done <<< "$FAIL_LINES"
     fi
 
-    # Extract the full failure details.
-    # We look for the first mocha failure (e.g. "  1)") or just take the end of the log if not found.
-    # We use awk to handle the extraction more cleanly across platforms.
-    DETAILS=$(awk '/[0-9]+\)/{flag=1} / passing \(/{flag=0} flag' "$TEST_OUTPUT_FILE" || true)
+    # Extract the full failure details from the end of the log.
+    # We look for the detailed failures section which appears after the summary line.
+    DETAILS=$(sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" "$TEST_OUTPUT_FILE" | \
+      awk '/[0-9]+ failing/ { start=1; next } start && /^[[:space:]]*1\)/ { flag=1 } flag' || true)
     
     if [[ -z "$DETAILS" ]]; then
-       # Fallback: if no mocha-style failures found, just capture the last 15 lines of the error log
+       # Fallback: if no mocha-style failures summary found, just capture the last 15 lines
        DETAILS=$(tail -n 15 "$TEST_OUTPUT_FILE")
     fi
 
