@@ -528,6 +528,12 @@ const getScopedAuthorizationContext = async (userCtx, scopeDocsCtx = []) => {
   });
 
   const contacts = await findContactsByReplicationKeys(replicationKeys);
+  for (const docCtx of scopeDocsCtx) {
+    if (docCtx.viewResults && docCtx.viewResults.contactsByDepth && docCtx.viewResults.contactsByDepth.length) {
+      contacts.push(docCtx.doc);
+    }
+  }
+
   if (authorizationCtx.replicatePrimaryContacts) {
     const primaryPlaces = await getPrimaryPlaces(contacts);
     contacts.push(...primaryPlaces);
