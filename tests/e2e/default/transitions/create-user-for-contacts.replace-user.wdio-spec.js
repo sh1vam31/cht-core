@@ -62,6 +62,7 @@ describe('Create user for contacts', () => {
   /**
    * Ongoing replication can be interrupted by the user being edited on the server side.
    * A 401 for a replication request will create a feedback doc, which will fail the test.
+   * Document update conflicts are expected during the conflict scenario test and should be ignored.
    */
   const assertFeedbackDocs = async () => {
     const feedbackDocs = await chtDbUtils.getFeedbackDocs();
@@ -69,14 +70,21 @@ describe('Create user for contacts', () => {
       return;
     }
 
-    const feedbackDocsToIgnore = [ 'Http failure response', 'Server error' ];
+    const feedbackDocsToIgnore = [
+      'Http failure response',
+      'Server error',
+      'Document update conflict',
+      'Error selecting contact',
+    ];
 
     const unknownMessages = feedbackDocs
       .map(doc => doc.info.message)
       .filter(message => !feedbackDocsToIgnore.find(toIgnore => message.includes(toIgnore)));
 
-    if (!unknownMessages.length) {
-      await chtDbUtils.clearFeedbackDocs();
+    await chtDbUtils.clearFeedbackDocs();
+
+    if (unknownMessages.length) {
+      throw new Error(`Unexpected feedback docs found: ${unknownMessages.join(', ')}`);
     }
   };
 
