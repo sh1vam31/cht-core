@@ -134,7 +134,8 @@ const loadTransitions = (synchronous = false) => {
   const transitionsConfig = config.get('transitions') || [];
   loadErrors = false;
 
-  const loadedTransitions = [];
+  transitions.splice(0, transitions.length);
+
   // Load all configured transitions
   AVAILABLE_TRANSITIONS.forEach(transition => {
     const conf = transitionsConfig[transition];
@@ -146,7 +147,7 @@ const loadTransitions = (synchronous = false) => {
     }
 
     try {
-      self._loadTransition(transition, synchronous, loadedTransitions);
+      self._loadTransition(transition, synchronous);
     } catch (e) {
       const errorMessage = `Failed loading transition "${transition}"`;
       loadErrors = [errorMessage, e && e.message || 'unknown'];
@@ -171,11 +172,9 @@ const loadTransitions = (synchronous = false) => {
     transitions.splice(0, transitions.length);
     throw new Error('Transitions are disabled until the above configuration errors are fixed.');
   }
-
-  transitions.splice(0, transitions.length, ...loadedTransitions);
 };
 
-const loadTransition = (key, synchronous, transitionsList) => {
+const loadTransition = (key, synchronous) => {
   logger.info(`Loading transition "${key}"`);
   const transition = require('./' + key);
 
@@ -187,7 +186,7 @@ const loadTransition = (key, synchronous, transitionsList) => {
   if (transition.init) {
     transition.init();
   }
-  transitionsList.push({ key: key, module: transition });
+  transitions.push({ key: key, module: transition });
 };
 
 /*
