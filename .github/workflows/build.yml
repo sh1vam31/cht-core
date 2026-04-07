@@ -199,6 +199,8 @@ jobs:
           sleep 2
 
       - uses: nolar/setup-k3d-k3s@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: azure/setup-helm@v4.1.0
       - uses: azure/setup-kubectl@v4
       - name: Run tests
