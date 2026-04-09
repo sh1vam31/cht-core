@@ -40,7 +40,9 @@ setSecret() {
 	fi
 
 	if ! sed -n '/^\s*\[\s*couch_httpd_auth\s*\]\s*$/,/^\s*\[/p' "$CLUSTER_CREDENTIALS" | grep -q '^\s*secret\s*='; then
-		sed -i "/^\s*\[\s*couch_httpd_auth\s*\]\s*$/a secret = $COUCHDB_SECRET" "$CLUSTER_CREDENTIALS"
+		sed "/^\s*\[\s*couch_httpd_auth\s*\]\s*$/a secret = $COUCHDB_SECRET" "$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp"
+		cp "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
+		rm "${CLUSTER_CREDENTIALS}.tmp"
 	fi
 }
 
@@ -54,7 +56,9 @@ setUuid() {
 	fi
 
 	if ! sed -n '/^\s*\[\s*couchdb\s*\]\s*$/,/^\s*\[/p' "$CLUSTER_CREDENTIALS" | grep -q '^\s*uuid\s*='; then
-		sed -i "/^\s*\[\s*couchdb\s*\]\s*$/a uuid = $COUCHDB_UUID" "$CLUSTER_CREDENTIALS"
+		sed "/^\s*\[\s*couchdb\s*\]\s*$/a uuid = $COUCHDB_UUID" "$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp"
+		cp "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
+		rm "${CLUSTER_CREDENTIALS}.tmp"
 	fi
 }
 
@@ -98,7 +102,8 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 			export ADMIN_CREDS_LINE
 			awk '/^\s*\[\s*admins\s*\]\s*$/{print; print ENVIRON["ADMIN_CREDS_LINE"]; next}1' \
 				"$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
-				&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
+				&& cp "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS" \
+				&& rm "${CLUSTER_CREDENTIALS}.tmp"
 		fi
 	fi
 
@@ -106,7 +111,9 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 		# Since changing this name after it has been set can mess up clustering, this can only run once  so a new service name can not be set on subsequent runs
 		# Should only run when creating a cluster
 		if grep "127.0.0.1" /opt/couchdb/etc/vm.args; then
-			sed -i "s/127.0.0.1/$SVC_NAME/" "/opt/couchdb/etc/vm.args"
+			sed "s/127.0.0.1/$SVC_NAME/" "/opt/couchdb/etc/vm.args" > "/opt/couchdb/etc/vm.args.tmp"
+			cp "/opt/couchdb/etc/vm.args.tmp" "/opt/couchdb/etc/vm.args"
+			rm "/opt/couchdb/etc/vm.args.tmp"
 		fi
 	fi
 
@@ -117,7 +124,9 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 		fi
 
 		# Always set the log level (remove old value first, then insert)
-		sed -i -e '/^\s*level\s*=.*/d' -e "/^\s*\[\s*log\s*\]\s*$/a level = $COUCHDB_LOG_LEVEL" "$CLUSTER_CREDENTIALS"
+		sed -e '/^\s*level\s*=.*/d' -e "/^\s*\[\s*log\s*\]\s*$/a level = $COUCHDB_LOG_LEVEL" "$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp"
+		cp "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
+		rm "${CLUSTER_CREDENTIALS}.tmp"
 	fi
 
 	if [ "$CLUSTER_PEER_IPS" ] || [ "$IS_CLUSTER" = false ]; then
@@ -145,7 +154,8 @@ if [ "$1" = '/opt/couchdb/bin/couchdb' ]; then
 			in_admins && $0 ~ "^\\s*" user "\\s*=" { next }
 			1
 		' "$CLUSTER_CREDENTIALS" > "${CLUSTER_CREDENTIALS}.tmp" \
-			&& mv "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS"
+			&& cp "${CLUSTER_CREDENTIALS}.tmp" "$CLUSTER_CREDENTIALS" \
+			&& rm "${CLUSTER_CREDENTIALS}.tmp"
 
 		COUCHDB_SECRET=$(curl -u "$COUCHDB_USER:$COUCHDB_PASSWORD" "http://$COUCHDB_SYNC_ADMINS_NODE:5984/_node/couchdb@$COUCHDB_SYNC_ADMINS_NODE/_config/couch_httpd_auth/secret" | sed "s/^\([\"]\)\(.*\)\1\$/\2/g")
 		setSecret
