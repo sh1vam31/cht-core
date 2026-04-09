@@ -33,7 +33,8 @@ const getApiSmsChanges = (messages) => {
           clearTimeout(timeout);
           sentinelUtils
             .waitForSentinel(ids)
-            .then(() => resolve(changes));
+            .then(() => resolve(changes))
+            .catch(reject);
         }
 
       }
