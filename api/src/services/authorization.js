@@ -466,7 +466,7 @@ const findContactsByReplicationKeys = (replicationKeys) => {
  * @returns {Promise<Object[]>}
  */
 const getPrimaryPlaces = async (docs) => {
-  const docIds = docs.map(doc => doc._id);
+  const docIds = [...new Set(docs.map(doc => doc._id))];
   const queryResult = await db.medic.query('medic/contacts_by_primary_contact', { keys: docIds, include_docs: true });
   return queryResult.rows.map(row => row.doc).filter(doc => doc);
 };
@@ -528,7 +528,13 @@ const getScopedAuthorizationContext = async (userCtx, scopeDocsCtx = []) => {
   });
 
   const contacts = await findContactsByReplicationKeys(replicationKeys);
-  contacts.push(...scopeDocsCtx.map(docCtx => docCtx.doc));
+  const fetchedIds = new Set(contacts.map(c => c._id));
+  scopeDocsCtx.forEach(docCtx => {
+    if (!fetchedIds.has(docCtx.doc._id)) {
+      contacts.push(docCtx.doc);
+      fetchedIds.add(docCtx.doc._id);
+    }
+  });
 
   if (authorizationCtx.replicatePrimaryContacts) {
     const primaryPlaces = await getPrimaryPlaces(contacts);
