@@ -9,6 +9,9 @@ const DOC_IDS = {
   PRIVACY_POLICIES: 'privacy-policies',
   PARTNERS: 'partners',
   BRANDING: 'branding',
+  MIGRATION_LOG: 'migration-log',
+  EXTENSION_LIBS: 'extension-libs',
+  ZSCORE_CHARTS: 'zscore-charts',
 };
 
 // Contact Types
@@ -43,6 +46,12 @@ const USER_ROLES = {
   COUCHDB_ADMIN: '_admin',
 };
 
+// Prefixes
+const PREFIXES = {
+  COUCH_USER: 'org.couchdb.user:',
+  TRANSLATIONS: 'messages-',
+};
+
 module.exports = {
   DOC_IDS,
   DOC_TYPES,
@@ -50,4 +59,5 @@ module.exports = {
   SENTINEL_METADATA,
   USER_ROLES,
   CONTACT_TYPES,
+  PREFIXES,
 };
