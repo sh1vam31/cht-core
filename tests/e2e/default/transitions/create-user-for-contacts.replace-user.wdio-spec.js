@@ -70,6 +70,12 @@ describe('Create user for contacts', () => {
       return;
     }
 
+    /**
+     * Document update conflicts are expected during the "conflict scenario" test case
+     * (line 553), where a contact is modified both offline and online. This intentional
+     * sync conflict is verified using waitForConflicts, so we ignore it here to allow
+     * the test to proceed.
+     */
     const feedbackDocsToIgnore = [
       'Http failure response',
       'Server error',

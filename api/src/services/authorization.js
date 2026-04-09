@@ -325,7 +325,7 @@ const getContextObject = (userCtx) => {
   return {
     userCtx,
     contactsByDepthKeys: getContactsByDepthKeys(userCtx, contactDepth),
-    subjectIds: [ ALL_KEY, getUserSettingsId(userCtx.name) ],
+    subjectIds: [ ALL_KEY, getUserSettingsId(userCtx.name), ...(userCtx.facility_id || []) ],
     contactDepth,
     reportDepth,
     subjectsDepth,
