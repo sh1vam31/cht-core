@@ -520,10 +520,20 @@ const getScopedAuthorizationContext = async (userCtx, scopeDocsCtx = []) => {
   }
 
   // collect all values that the docs would emit in `medic/docs_by_replication_key`
-  const replicationKeys = [...(userCtx.facility_id || [])];
+  const replicationKeys = [];
   scopeDocsCtx.forEach(docCtx => {
     const viewResults = docCtx.viewResults || getViewResults(docCtx.doc);
     replicationKeys.push(...getReplicationKeys(viewResults));
+
+    // Also include lineage roots from `contacts_by_depth` results to ensure doc is authorized against parents
+    if (viewResults.contactsByDepth) {
+      viewResults.contactsByDepth.forEach(row => {
+        if (row.key && row.key[0]) {
+          replicationKeys.push(row.key[0]);
+        }
+      });
+    }
+
     docCtx.viewResults = viewResults;
   });
 
