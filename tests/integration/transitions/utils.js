@@ -1,6 +1,4 @@
 const utils = require('@utils');
-const sentinelUtils = require('@utils/sentinel');
-
 
 const getApiSmsChanges = (messages) => {
   const expectedMessages = messages.map(message => message.content);
@@ -31,12 +29,8 @@ const getApiSmsChanges = (messages) => {
         if (!expectedMessages.length) {
           listener.cancel();
           clearTimeout(timeout);
-          sentinelUtils
-            .waitForSentinel(ids)
-            .then(() => resolve(changes))
-            .catch(reject);
+          resolve(changes);
         }
-
       }
     });
   });
