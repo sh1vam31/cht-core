@@ -55,7 +55,7 @@ const getExpectedNouveauIndexes = (db) => {
   return Promise.all(indexes.map((name) => getExpectedNouveauIndex(db, name)));
 };
 
-const INDETERMINATE_FIELDS = ['current', 'uptime', 'date', 'fragmentation', 'node', 'sizes', 'file_size'];
+const INDETERMINATE_FIELDS = ['current', 'uptime', 'date', 'fragmentation', 'node', 'sizes', 'file_size', 'doc_count'];
 
 const assertCouchDbDataSizeFields = (couchData) => {
   chai.expect(couchData.fragmentation).to.be.gte(0);
