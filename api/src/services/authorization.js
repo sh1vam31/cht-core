@@ -325,7 +325,7 @@ const getContextObject = (userCtx) => {
   return {
     userCtx,
     contactsByDepthKeys: getContactsByDepthKeys(userCtx, contactDepth),
-    subjectIds: [ ALL_KEY, getUserSettingsId(userCtx.name), ...(userCtx.facility_id || []) ],
+    subjectIds: [ ALL_KEY, getUserSettingsId(userCtx.name) ],
     contactDepth,
     reportDepth,
     subjectsDepth,
@@ -520,7 +520,7 @@ const getScopedAuthorizationContext = async (userCtx, scopeDocsCtx = []) => {
   }
 
   // collect all values that the docs would emit in `medic/docs_by_replication_key`
-  const replicationKeys = [];
+  const replicationKeys = [...(userCtx.facility_id || [])];
   scopeDocsCtx.forEach(docCtx => {
     const viewResults = docCtx.viewResults || getViewResults(docCtx.doc);
     replicationKeys.push(...getReplicationKeys(viewResults));
