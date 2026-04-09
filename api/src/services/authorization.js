@@ -524,18 +524,12 @@ const getScopedAuthorizationContext = async (userCtx, scopeDocsCtx = []) => {
   scopeDocsCtx.forEach(docCtx => {
     const viewResults = docCtx.viewResults || getViewResults(docCtx.doc);
     replicationKeys.push(...getReplicationKeys(viewResults));
-
-    // Also include lineage roots from `contacts_by_depth` results to ensure doc is authorized against parents
-    viewResults.contactsByDepth?.forEach(row => {
-      if (row.key?.[0]) {
-        replicationKeys.push(row.key[0]);
-      }
-    });
-
     docCtx.viewResults = viewResults;
   });
 
   const contacts = await findContactsByReplicationKeys(replicationKeys);
+  contacts.push(...scopeDocsCtx.map(docCtx => docCtx.doc));
+
   if (authorizationCtx.replicatePrimaryContacts) {
     const primaryPlaces = await getPrimaryPlaces(contacts);
     contacts.push(...primaryPlaces);
