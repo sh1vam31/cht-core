@@ -20,6 +20,7 @@ const getLogWithView = () => {
   const options = {
     include_docs: true,
     key: [MIGRATION_LOG_TYPE],
+    stale: 'update_after',
   };
   return db.medic.query('medic-client/doc_by_type', options).then(result => {
     return result && result.rows && result.rows[0] && result.rows[0].doc;

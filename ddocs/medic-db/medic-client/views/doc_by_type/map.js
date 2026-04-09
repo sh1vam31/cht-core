@@ -1,6 +1,6 @@
 function map(doc) {
-  const typesToExclude = [ 'data_record', 'task', 'contact', 'target', 'telemetry' ];
-  if (doc.type && !typesToExclude.includes(doc.type)) {
+  var typesToExclude = { 'data_record': 1, 'task': 1, 'target': 1, 'telemetry': 1 };
+  if (doc.type && !typesToExclude[doc.type]) {
     emit([ doc.type ]);
   }
 }

@@ -22,6 +22,7 @@ const loadTranslations = () => {
   const options = {
     key: [DOC_TYPES.TRANSLATIONS],
     include_docs: true,
+    stale: 'update_after',
   };
   return db.medic
     .query('medic-client/doc_by_type', options)
