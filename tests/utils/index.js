@@ -270,7 +270,9 @@ const request = async (options, { debug, maxRetries = 3, initialDelay = 100 } = 
 
       // Retry on 502/503 errors
       if ((response.status === 502 || response.status === 503) && attempt < maxRetries - 1) {
-        console.warn(`Transient error ${response.status} on ${options.method || 'GET'} ${uri}. Retrying in ${delay}ms...`);
+        console.warn(
+          `Transient error ${response.status} on ${options.method || 'GET'} ${uri}. Retrying in ${delay}ms...`
+        );
         await delayPromise(delay);
         delay = Math.min(delay * 2, 5000);
         continue;
@@ -285,7 +287,10 @@ const request = async (options, { debug, maxRetries = 3, initialDelay = 100 } = 
       const isNetworkError = !err.status;
 
       if ((isRetryableStatus || isNetworkError) && attempt < maxRetries - 1) {
-        console.warn(`Request failed (${err.status || 'Network Error'}) on ${options.method || 'GET'} ${uri}. Retrying in ${delay}ms...`);
+        console.warn(
+          `Request failed (${err.status || 'Network Error'}) on ${options.method || 'GET'} ${uri}. ` +
+          `Retrying in ${delay}ms...`
+        );
         lastError = err;
         await delayPromise(delay);
         delay = Math.min(delay * 2, 5000);
