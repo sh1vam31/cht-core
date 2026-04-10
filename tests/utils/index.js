@@ -235,37 +235,67 @@ const getResponseBody = async (response, sendJson) => {
 
 // First Object is passed to http.request, second is for specific options / flags
 // for this wrapper
-const request = async (options, { debug } = {}) => {
-  const  { uri, options: requestInit, resolveWithFullResponse, sendJson } = getRequestOptions(options);
-  if (debug) {
-    console.debug('SENDING REQUEST', JSON.stringify({ ...options, uri, body: null }, null, 2));
+const request = async (options, { debug, maxRetries = 3, initialDelay = 100 } = {}) => {
+  const { uri, options: requestInit, resolveWithFullResponse, sendJson } = getRequestOptions(options);
+
+  let lastError;
+  let delay = initialDelay;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      if (debug) {
+        console.debug('SENDING REQUEST', JSON.stringify({ ...options, uri, body: null }, null, 2));
+      }
+
+      const response = await fetch(uri, requestInit);
+      const responseObj = {
+        ...response,
+        body: await getResponseBody(response, sendJson),
+        status: response.status,
+        ok: response.ok,
+        headers: response.headers
+      };
+
+      if (debug) {
+        console.debug('RESPONSE', response.status, response.body);
+      }
+
+      if (resolveWithFullResponse) {
+        return responseObj;
+      }
+
+      if (response.ok || (response.status > 300 && response.status < 399)) {
+        return responseObj.body;
+      }
+
+      // Retry on 502/503 errors
+      if ((response.status === 502 || response.status === 503) && attempt < maxRetries - 1) {
+        console.warn(`Transient error ${response.status} on ${options.method || 'GET'} ${uri}. Retrying in ${delay}ms...`);
+        await delayPromise(delay);
+        delay = Math.min(delay * 2, 5000);
+        continue;
+      }
+
+      console.warn(`Error with request: ${options.method || 'GET'} ${uri} ${responseObj.status}`);
+      const err = new Error(response.error || `${response.status} - ${JSON.stringify(responseObj.body)}`);
+      Object.assign(err, responseObj);
+      throw err;
+    } catch (err) {
+      const isRetryableStatus = err.status === 502 || err.status === 503;
+      const isNetworkError = !err.status;
+
+      if ((isRetryableStatus || isNetworkError) && attempt < maxRetries - 1) {
+        console.warn(`Request failed (${err.status || 'Network Error'}) on ${options.method || 'GET'} ${uri}. Retrying in ${delay}ms...`);
+        lastError = err;
+        await delayPromise(delay);
+        delay = Math.min(delay * 2, 5000);
+        continue;
+      }
+      throw err;
+    }
   }
 
-  const response = await fetch(uri, requestInit);
-  const responseObj = {
-    ...response,
-    body: await getResponseBody(response, sendJson),
-    status: response.status,
-    ok: response.ok,
-    headers: response.headers
-  };
-
-  if (debug) {
-    console.debug('RESPONSE', response.status, response.body);
-  }
-
-  if (resolveWithFullResponse) {
-    return responseObj;
-  }
-
-  if (response.ok || (response.status > 300 && response.status < 399)) {
-    return responseObj.body;
-  }
-
-  console.warn(`Error with request: ${options.method || 'GET'} ${uri} ${responseObj.status}`);
-  const err = new Error(response.error || `${response.status} - ${JSON.stringify(responseObj.body)}`);
-  Object.assign(err, responseObj);
-  throw err;
+  throw lastError || new Error('Request failed after retries');
 };
 
 const requestOnTestDb = (options, debug) => {
