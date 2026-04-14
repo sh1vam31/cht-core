@@ -5,7 +5,7 @@ const { expect } = chai;
 describe('CouchDB Cluster Unit Tests', () => {
   const COUCHDB_USER = process.env.COUCHDB_USER;
   const COUCHDB_PASSWORD = process.env.COUCHDB_PASSWORD;
-  const COUCH_PORTS = ['15984', '25984', '35984'];
+  const COUCH_PORTS = ['15984', '25984', '31984'];
   const TEST_DB_NAME = 'tests';
 
 
