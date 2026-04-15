@@ -48,7 +48,7 @@ services:
       - "SVC_NAME=couchdb3.local"  
       - "COUCHDB_SYNC_ADMINS_NODE=couchdb1.local" 
     ports:
-      - "31984:5984"
+      - "35984:5984"
     networks:
       couch-test-network:
         aliases:
