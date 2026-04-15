@@ -55,6 +55,8 @@ describe('Send message', () => {
   beforeEach(async () => {
     await commonPage.goToMessages();
     await commonPage.waitForPageLoaded();
+    // Wait for DOM to stabilize after Angular routing to prevent stale element reference during fast action button click
+    await browser.pause(1000);
   });
 
   after(async () => {
