@@ -547,7 +547,7 @@ const isMenuOptionVisible = async (action) => {
 
 const countInboxItems = async () => await $$('.inbox-items .content-row').length;
 const noMoreElements = (elementTag) => $(`aria/No more ${elementTag}`);
-const loadNextInfiniteScrollPage = async (elementTag, timeout) => {
+const loadNextInfiniteScrollPage = async (elementTag, timeout = 15000) => {
   const initialInboxItemsCount = await countInboxItems();
   await browser.execute(() => {
     const container = document.querySelector('.items-container');
@@ -555,9 +555,13 @@ const loadNextInfiniteScrollPage = async (elementTag, timeout) => {
       container.scrollTop = container.scrollHeight;
     }
   });
+
+  // Small pause to allow the scroll event to trigger and the loading to start
+  await browser.pause(500);
+
   await browser.waitUntil(
     async () => (await countInboxItems()) > initialInboxItemsCount || (await noMoreElements(elementTag).isDisplayed()),
-    { timeout, timeoutMsg: 'Infinite scroll did not load new items' }
+    { timeout, timeoutMsg: `Infinite scroll did not load new ${elementTag}` }
   );
 };
 

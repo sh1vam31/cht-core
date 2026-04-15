@@ -21,9 +21,18 @@ const addRecipient = () => replyMessageActions().$('.btn-add-recipients');
 const submitReplyBtn = () => replyMessageActions().$('.submit');
 const messages = () => $$(`${MESSAGE_CONTENT} li`);
 
+const waitForMessagesLoaded = async (timeout) => {
+  await commonPage.waitForPageLoaded(timeout);
+  if (await messagesLoadingStatus().isExisting()) {
+    await messagesLoadingStatus().waitForDisplayed({ reverse: true, timeout });
+  }
+};
+
 const openMessage = async (identifier) => {
-  await messageInList(identifier).waitForClickable();
-  await messageInList(identifier).click();
+  await waitForMessagesLoaded();
+  const element = messageInList(identifier);
+  await element.waitForClickable();
+  await element.click();
   await $(MESSAGE_CONTENT).waitForDisplayed();
 };
 
@@ -150,6 +159,7 @@ const getMessagesModalDetails = async () => {
 
 module.exports = {
   openMessage,
+  waitForMessagesLoaded,
   getMessageInListDetails,
   getMessageHeader,
   getMessageContent,
