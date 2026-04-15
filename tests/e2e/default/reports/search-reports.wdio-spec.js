@@ -93,6 +93,7 @@ describe('Reports Search', () => {
       const potuPregnancy = reports[3];
       await commonPage.goToReports();
       // Asserting first load reports
+      await reportsPage.waitForReportsLoaded();
       expect((await reportsPage.reportsListDetails()).length).to.equal(allReports.length);
 
       await reportsPage.openReport(sittuPregnancy._id);

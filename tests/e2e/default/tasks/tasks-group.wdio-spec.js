@@ -198,7 +198,6 @@ describe('Tasks group landing page', () => {
       await tasksPage.waitForTaskContentLoaded('Home Visit');
       const taskElement = await tasksPage.getOpenTaskElement();
       await genericForm.submitForm();
-      await taskElement.waitForDisplayed({ reverse: true });
       // tasks group is displayed again
       await tasksPage.waitForTasksGroupLoaded();
       const secondGroupTasks = await tasksPage.getTasksInGroup();
