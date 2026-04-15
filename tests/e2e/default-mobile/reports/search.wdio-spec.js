@@ -49,6 +49,7 @@ describe('Search Reports', () => {
   it('should return results matching the search term and then return all data when clearing search', async () => {
     const [ hospitalSMS, healthCenterSMS, hospitalReport, healthCenterReport ] = reportDocs;
     await commonPage.goToReports();
+    await reportsPage.waitForReportsLoaded();
     // Asserting first load reports
     const reportsList = await reportsPage.reportsListDetails();
     expect(reportsList.length).to.equal(reportDocs.length);
@@ -71,6 +72,7 @@ describe('Search Reports', () => {
     const hospitalReport = reportDocs[2];
     const healthCenterReport = reportDocs[3];
     await commonPage.goToReports();
+    await reportsPage.waitForReportsLoaded();
     // Asserting first load reports
     const reportsList = await reportsPage.reportsListDetails();
     expect(reportsList.length).to.equal(reportDocs.length);
@@ -87,6 +89,7 @@ describe('Search Reports', () => {
     const [ hospitalSMS, healthCenterSMS, hospitalReport, healthCenterReport ] = reportDocs;
     const randomWord = 'lorem-ipsum';
     await commonPage.goToReports();
+    await reportsPage.waitForReportsLoaded();
     // Asserting first load reports
     expect((await reportsPage.reportsListDetails()).length).to.equal(reportDocs.length);
 
@@ -105,6 +108,7 @@ describe('Search Reports', () => {
   it('should have unique results for when multiple fields match the same search text', async () => {
     const [ hospitalSMS, healthCenterSMS, hospitalReport, healthCenterReport ] = reportDocs;
     await commonPage.goToReports();
+    await reportsPage.waitForReportsLoaded();
 
     // Asserting first load reports
     expect((await reportsPage.reportsListDetails()).length).to.equal(reportDocs.length);
@@ -127,6 +131,7 @@ describe('Search Reports', () => {
     async () => {
       const [ hospitalSMS, healthCenterSMS, hospitalReport, healthCenterReport ] = reportDocs;
       await commonPage.goToReports();
+      await reportsPage.waitForReportsLoaded();
 
       // Asserting first load reports
       expect((await reportsPage.reportsListDetails()).length).to.equal(reportDocs.length);
