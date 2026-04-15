@@ -9,9 +9,8 @@ export COUCHDB_USER
 wait-for-couchdb:
 	@echo "Waiting for CouchDB containers to be ready..."
 	@for i in 1 2 3; do \
-		if [ "$$i" = "3" ]; then port="31984"; else port="$${i}5984"; fi; \
-		until curl -s -f -u "$(COUCHDB_USER):$(COUCHDB_PASSWORD)" http://localhost:$$port/_up > /dev/null; do \
-			echo "Waiting for couchdb$$i on port $$port..."; \
+		until curl -s -f -u "$(COUCHDB_USER):$(COUCHDB_PASSWORD)" http://localhost:$${i}5984/_up > /dev/null; do \
+			echo "Waiting for couchdb$$i..."; \
 			sleep 2; \
 		done; \
 	done
