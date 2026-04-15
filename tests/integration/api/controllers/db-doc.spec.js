@@ -2072,10 +2072,9 @@ describe('db-doc handler', () => {
         })
         .then(results => {
           // allowed_attach is allowed, but missing attachment
-          chai.expect(results[0].body).to.deep.equal({
-            error: 'not_found',
-            reason: 'Document is missing attachment',
-          });
+          // CouchDB version-specific reason: 'missing' (older) or 'Document is missing attachment' (newer)
+          chai.expect(results[0].body.error).to.equal('not_found');
+          chai.expect(['missing', 'Document is missing attachment']).to.include(results[0].body.reason);
           // allowed_attach is allowed and has attachment
           chai.expect(results[1]).to.equal('my attachment content');
           // allowed_attach is not allowed and has attachment
@@ -2205,10 +2204,9 @@ describe('db-doc handler', () => {
         })
         .then(results => {
           // allowed_attach is allowed, but missing attachment
-          chai.expect(results[0].body).to.deep.equal({
-            error: 'not_found',
-            reason: 'Document is missing attachment',
-          });
+          // CouchDB version-specific reason: 'missing' (older) or 'Document is missing attachment' (newer)
+          chai.expect(results[0].body.error).to.equal('not_found');
+          chai.expect(['missing', 'Document is missing attachment']).to.include(results[0].body.reason);
           // allowed_attach is allowed and has attachment
           chai.expect(results[1]).to.equal('my attachment content');
           // allowed_attach is not allowed and has attachment
