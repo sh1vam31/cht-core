@@ -64,7 +64,7 @@ describe('Create user for contacts', () => {
    * A 401 for a replication request will create a feedback doc, which will fail the test.
    * Document update conflicts are expected during the conflict scenario test and should be ignored.
    */
-  const assertFeedbackDocs = async () => {
+  const assertFeedbackDocs = async (expectedConflicts = []) => {
     const feedbackDocs = await chtDbUtils.getFeedbackDocs();
     if (!feedbackDocs.length) {
       return;
@@ -73,19 +73,26 @@ describe('Create user for contacts', () => {
     /**
      * Document update conflicts are expected during the "conflict scenario" test case
      * (line 553), where a contact is modified both offline and online. This intentional
-     * sync conflict is verified using waitForConflicts, so we ignore it here to allow
-     * the test to proceed.
+     * sync conflict is verified using waitForConflicts.
      */
     const feedbackDocsToIgnore = [
       'Http failure response',
       'Server error',
-      'Document update conflict',
       'Error selecting contact',
     ];
 
     const unknownMessages = feedbackDocs
       .map(doc => doc.info.message)
-      .filter(message => !feedbackDocsToIgnore.find(toIgnore => message.includes(toIgnore)));
+      .filter(message => {
+        const isExpectedConflict = message.includes('Document update conflict') &&
+          expectedConflicts.some(expected => message.includes(expected));
+
+        if (isExpectedConflict) {
+          return false;
+        }
+
+        return !feedbackDocsToIgnore.find(toIgnore => message.includes(toIgnore));
+      });
 
     await chtDbUtils.clearFeedbackDocs();
 
@@ -673,7 +680,7 @@ describe('Create user for contacts', () => {
         // afterEach will handle deleting the other version.
         await utils.revertDb([/^form:/], true);
 
-        await assertFeedbackDocs();
+        await assertFeedbackDocs([originalContactId]);
       });
 
       it('does not create a new user or re-parent reports when the transition is disabled', async () => {
